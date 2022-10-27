@@ -29,9 +29,6 @@ $SteamSysFolders = @(
 if(Test-Path 'HKLM:\SOFTWARE\Valve\Steam') {
     $SteamInstallPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Valve\Steam').InstallPath
 }
-if(Test-Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam') {
-    $SteamInstallPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath
-}
 if($SteamInstallPath -eq '') { throw "Can't find steam installed on this machine"}
 
 $ClearPaths = (
@@ -101,7 +98,7 @@ foreach ($SteamSysFolder in $SteamSysFolders)
 {
 	if ((Test-Path -Path "$SteamInstallPath\$SteamSysFolder") -eq $true)
 	{
-		Get-ChildItem -Path "$SteamInstallPath\$SteamSysFolder" -Recurse -Force -Exclude config.vdf | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
+		Get-ChildItem -Path "$SteamInstallPath\$SteamSysFolder" -Recurse -Force -Exclude config.vdf | Where-Object {($_.LastWriteTime -le (Get-Date).AddHours(-12) )} | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
 		WriteLog "Каталог '$SteamInstallPath\$SteamSysFolder' очищен"
 	}
 }
