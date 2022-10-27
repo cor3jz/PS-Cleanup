@@ -29,6 +29,9 @@ $SteamSysFolders = @(
 if(Test-Path 'HKLM:\SOFTWARE\Valve\Steam') {
     $SteamInstallPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Valve\Steam').InstallPath
 }
+if(Test-Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam') {
+    $SteamInstallPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath
+}
 if($SteamInstallPath -eq '') { throw "Can't find steam installed on this machine"}
 
 $ClearPaths = (
