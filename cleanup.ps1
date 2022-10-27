@@ -101,7 +101,7 @@ foreach ($SteamSysFolder in $SteamSysFolders)
 {
 	if ((Test-Path -Path "$SteamInstallPath\$SteamSysFolder") -eq $true)
 	{
-		Get-ChildItem -Path "$SteamInstallPath\$SteamSysFolder" -Recurse -Force -Exclude config.vdf | Where-Object {($_.LastWriteTime -le (Get-Date).AddHours(-12) )} | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
+		Get-ChildItem -Path "$SteamInstallPath\$SteamSysFolder" -Recurse -Force -Exclude config.vdf | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
 		WriteLog "Каталог '$SteamInstallPath\$SteamSysFolder' очищен"
 	}
 }
