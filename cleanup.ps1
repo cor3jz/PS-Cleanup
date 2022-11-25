@@ -1,4 +1,16 @@
-﻿$LogFile = "$env:windir\cleanup.log"
+﻿If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+    Start-Process powershell.exe "-noProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    Exit
+}
+
+$size = $Host.UI.RawUI.WindowSize
+$size.Width = 300
+$size.Height = 64
+$Host.UI.RawUI.WindowSize = $size
+$Host.UI.RawUI.WindowTitle="Cleanup Script"
+Write-Host "Выполняется очистка данных предыдущего пользователя..."
+
+$LogFile = "$env:windir\cleanup.log"
 
 if ((Test-Path -Path "$env:windir\cleanup.log" -PathType Leaf)) {
     Remove-Item -Path "$env:windir\cleanup.log"
@@ -120,43 +132,38 @@ foreach ($Path in $ClearPaths)
 	}
 }
 
-if(Test-Path '$env:localappdata\GameCenter\GameCenter.ini') {
-    Remove-Item "$env:localappdata\GameCenter\GameCenter.ini" -Force | Add-Content $Logfile
-	WriteLog "Настройки VKPlay удалены"
-}
-
-if(Test-Path '$env:localappdata\EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini') {
-    Remove-Item "$env:localappdata\EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini" -Force | Add-Content $Logfile
-	WriteLog "Настройки Epic Games удалены"
-}
-
+Remove-Item "$env:localappdata\GameCenter\GameCenter.ini" -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
+WriteLog "Настройки VKPlay удалены"
+	
+Remove-Item "$env:localappdata\EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini" -Force -ErrorAction SilentlyContinue | Add-Content $Logfile
+WriteLog "Настройки Epic Games удалены"
+	
 Start-Sleep -Seconds 1
 
 Clear-RecycleBin -Force
 WriteLog "Корзина очищена"
 WriteLog "Скрипт завершил свою работу"
-
 # SIG # Begin signature block
 # MIIblQYJKoZIhvcNAQcCoIIbhjCCG4ICAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsyvTBud6nfhvQf+wWkYRag9c
-# KXygghYNMIIDAjCCAeqgAwIBAgIQJzS3sIHrZphKo/kUkOPi4TANBgkqhkiG9w0B
-# AQsFADAZMRcwFQYDVQQDDA5Tb3BoaWEgUHJvamVjdDAeFw0yMjEwMjcxMTQ1MTNa
-# Fw0yNDEwMjcxMTU1MTRaMBkxFzAVBgNVBAMMDlNvcGhpYSBQcm9qZWN0MIIBIjAN
-# BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt9biJr5GbkRNuu8M//DJlJC2TPRa
-# uWG5Eh+xd+htQLk5/mRDJ2IjTTEaFyC8oqfNY8Tueeb6bcW+NsKpxLP++3seVNmK
-# LyHumS/4QUWArBAFZ+gvNRGjZ2kakvHhjU8vQeRRFhKQV2Is6SjvMgHszSbbOJJS
-# 026di5S/WBtMXFTs6H5wk54Cv5jJUxgk9diwYCB1O1ZfVyszQf/nOV+7BzxAG01C
-# jUfLCNj+Dk89bH5cstTj0AePMChpWFmjndm7AAdEBMl+AgseqwRkNEFkcjpvHVs7
-# TFl6PqbkVFudV3SlZSAgplB7bC1K3hCUIro54teoiqypGHLtlJtdOftzHQIDAQAB
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyl3gd8ZRaBSgUpPFtW5UKnct
+# J1ygghYNMIIDAjCCAeqgAwIBAgIQajT0V2OVqqBBmMN/RYqHnTANBgkqhkiG9w0B
+# AQsFADAZMRcwFQYDVQQDDA5Tb3BoaWEgUHJvamVjdDAeFw0yMjExMjUxNjAxMTFa
+# Fw0yNDExMjUxNjExMTFaMBkxFzAVBgNVBAMMDlNvcGhpYSBQcm9qZWN0MIIBIjAN
+# BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuxjzLlX41x4l2Mv3v9qFztBCDLlf
+# YXmR/MqipQ1ch+HWpfQKx5gqsgTkqnfetQPKrFpQaZF6xV4PnhqPMJbO1H12ZR/Z
+# XVqoXz0SNv7OONp4UgDqgrJHEshtpARqVlpimrB9ndoSYR5MUm2zphYrjQ/yq+zJ
+# 3NS4ydYWl+drYVJGMowds6Y/lsEB83Gt4EujJ6sn74PTmR4JR37iLMRgpZN9QEzh
+# gfGSOnmrCk/CQe36nRHCXGc0P1OJImxoNFjo7UtXVvnt9b8gPhnIlZsGMssh6Sis
+# MyGuqrw5KGFwFPDsfeD0dwY/nM1Qk8B0/jvAZyVec0Iizbu8sRGO5CQkVQIDAQAB
 # o0YwRDAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwHQYDVR0O
-# BBYEFBkbcXIoDLN5STETzNoIFd/+F+PxMA0GCSqGSIb3DQEBCwUAA4IBAQAmiA6K
-# /O59GPxl/r9QE6SQmXzpn/ShS5/kWuC1uTzcmHFyu/FF8zeVyoiuHyk3qHF2AsND
-# aw7hI+CjDblXW+rctRcJSIT9EQwc6/pcbe6vd1bfNsgZ7+7TH7sLreCG76KnCvYz
-# hx3wi+iagVAEgL4VExGKxLrVdMjW58NeRZ0aWaKT0jDHL4/i3x4K4bRrYDqlcy++
-# XU0oPBGzB4jK6FQ2GVVzlD2uZ5F4n8gt734c2zZGcarLQQcrAsLJVRyvmlZMaAyf
-# nDH/OJhDkqUSluwnbfp2qVPhSKF2/o10CwiK+R49GbdLN+Iun3GtFixcOMRQQLix
-# Z6qgxg0eUOXsY2YqMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkq
+# BBYEFM+gJs42NqCHpReJvsdi80nMCvyMMA0GCSqGSIb3DQEBCwUAA4IBAQBEDKKc
+# riOiksCUXMuzw37ASHEAF4gA7AvYn/AsCq1kOClatET1MFn65X0aeKxMhlBQ5F4c
+# ev3+SOIhJXoFHyvkK8qiEv5cmCNvCD1ENfoEBa02uWavJXICPi2TWWEN3KlFsW6j
+# KE8J/wWEmJkC5zKRBMAn8RfwrSpsqSQTDElGLnizxp/JmqDug7zOfquSipW9PxMp
+# gXFS0P9FEKF7pD95igguQgR9zJEzpyjRkzeYASv0i6swUX3LBrZAvnYrlIoTlvYw
+# HP6129uZKFZ78ZOE/Adg7oployYisdB31Kk/ENkqUcDNJEHvY1guCueeTyFwY+AO
+# BbTFvIoNtZVy+I4MMIIFjTCCBHWgAwIBAgIQDpsYjvnQLefv21DiCEAYWjANBgkq
 # hkiG9w0BAQwFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5j
 # MRkwFwYDVQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBB
 # c3N1cmVkIElEIFJvb3QgQ0EwHhcNMjIwODAxMDAwMDAwWhcNMzExMTA5MjM1OTU5
@@ -258,31 +265,31 @@ WriteLog "Скрипт завершил свою работу"
 # HJpRxC+a9l+nJ5e6li6FV8Bg53hWf2rvwpWaSxECyIKcyRoFfLpxtU56mWz06J7U
 # WpjIn7+NuxhcQ/XQKujiYu54BNu90ftbCqhwfvCXhHjjCANdRyxjqCU4lwHSPzra
 # 5eX25pvcfizM/xdMTQCi2NYBDriL7ubgclWJLCcZYfZ3AYwxggTyMIIE7gIBATAt
-# MBkxFzAVBgNVBAMMDlNvcGhpYSBQcm9qZWN0AhAnNLewgetmmEqj+RSQ4+LhMAkG
+# MBkxFzAVBgNVBAMMDlNvcGhpYSBQcm9qZWN0AhBqNPRXY5WqoEGYw39FioedMAkG
 # BSsOAwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJ
 # AzEMBgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMG
-# CSqGSIb3DQEJBDEWBBS68vsj5qe4YxQSz8TQ+DsQUpVsQTANBgkqhkiG9w0BAQEF
-# AASCAQCb1uxMW6w+qj7BNzo3kGqPc4yj9WwY931sz1/aSsJzTSLwSbxNRBD02S/6
-# XQJYO1IrdLKgh/IZkEMitJ878tp+z2Jybx7De0whr21CcUjPNZcKrXAv/GDCfpVk
-# N5qpyGWqIqAtqMsskCi2PPMKqbM+pfHjHLxvixEWHVkQKP5lGGloMfra4NLqBc+v
-# SxwyEUiijtPjuYGYpRgvlqNYvVf1e2Unez3iIQdK8MtJi52IIJLhlMmCbBtmSFNh
-# t/oiAJ0rLXnkv7ZvpDTrhNR/QFzZ8aQdAddgGhoaLA7P1xXtPq3a1Dyr4C5ElocI
-# 9TsCI86lTqdml1u1WjHrM/sg+Q+FoYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJ
+# CSqGSIb3DQEJBDEWBBQDkTP5uP9MmSlS4B0/zpHIxbrcFjANBgkqhkiG9w0BAQEF
+# AASCAQBNx5Lmm+Hg4uR/aYadGY7fUi9Usod3KCHu9NCAeKmrsyG19BltVYzUJIln
+# l6yATi+++hFwQULlf5CvT8FFsvmxLZ8Ag5K1T5pfTgYAO4ig6UvyOFrEGBL+3q1Z
+# MOwBcKXPSgLQ8UoJSws2v5+SEO/NRYAs9GlmnpVjkigwkl+nLrflWEDAj+XvXyY9
+# XvrFhaVo1pZBpKC9YtF0Ou9yEQ1mh2oljIAYaDgmEHSRKCykVcPhVrE0f83tizmV
+# P5MgsWaqAX+M++lQQCrn8KlHFbkh3HiuQwChkxnIAeVrJRfFZoFn3iCc1AyuYA7F
+# 4uXwEqrxzLF3Y9HZWSGDrORzE/z+oYIDIDCCAxwGCSqGSIb3DQEJBjGCAw0wggMJ
 # AgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMTsw
 # OQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQwOTYgU0hBMjU2IFRpbWVT
 # dGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjANBglghkgBZQMEAgEFAKBpMBgG
-# CSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTIyMTAyNzEx
-# NTUxNVowLwYJKoZIhvcNAQkEMSIEIKPhrKz/BQy7iHuHSZISup195ypn3NMQ+moy
-# 8b8pOrJTMA0GCSqGSIb3DQEBAQUABIICAGUjzyzWD+9GoEr+c80yArJC7JcwSgOy
-# EKaPBRKzO48VKbxwgeGDyhZF4wlfOzmhnbSW3z0y0eWSm5yecC47Pj4cv/SrIVr9
-# qblPkmmc1h3znrYgiQKLP0lPUlJJOQI+sevfZSxIo/5JLOFXGl4Xuxip+ACJ2L3F
-# VfIohfCC6PUvyB2nGWPi7weNQhWQhjdK/J59wJM5US9NfXDr4mGbgcJ3iND7GZ1t
-# veRZ4bfZyTbZaxF25sbgS3ZnaN5mMS2HalMnja4/Ck0WOStZ0pbVpy18nbFd/53S
-# SQwZJGDkUEGe+BYImRsbrdrheSpNbOuQMw585Y9lR8fBIrn+mcwmLV8w/uXY51kM
-# Q97Ce8/NOSJgmlrIUvzzc1JE5cGn5WMhT6N9qeEgeDyHR1mxinw6CIDWPW4K9NNH
-# lVKeEyEJd+UjKZfOS+bjlCKiGD0xXuFpUZ+Dk6HJfLNVu/+R6XiqHOYo8f0dopW4
-# a11EnFRzkHdZHNxNt+rJHpz+VHBkinvNiPonhvsBamPjbKa8/72UPBiKell08yKR
-# HqPHDrprA+59inT5aaM9r4H+/1duVHuY7qIWDWGi+bceRyOtI5F+FcZ+wkhmgSpf
-# 3Lxwz3oP9AOuTGnw1O5TmECA6OAKTsxMOqV5rlI+XnV9qyJmfjkcKFH1s5q0yRWc
-# zfGdhbG7KpAI
+# CSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTIyMTEyNTE2
+# MTEyN1owLwYJKoZIhvcNAQkEMSIEIHZUoCRGPP/Teao1kVrFBXNQID3bfvFL5myY
+# b14y07Y5MA0GCSqGSIb3DQEBAQUABIICACGlpawSR/hlVnh5hKoezN+IJO+v6OO5
+# rySiR9iDCjQPyWdwXN7Qt7QiCrgJuLoFSRCA/6sWR2Q4a2f+o4f3pka8KqCxRqs4
+# WVEYkfofNw7LyJQpE1ae5F4/al6Rs/YWs1Ak5JwHXXf10Y4GLnAqy5TJZVMHa1pF
+# C2N2zMWW2VOhVJ/BIZt7lK7PDWxX2Vl8cUJ0sryOaQ5BGd1l7/n91huAJEZ+cBZA
+# yEuRdA5ZhiP9AHToQnadjA0fF/VqKRpQAqJfkEB2zm0cReNICTZOxvQrenH/ooDZ
+# kUR3qnlKpqVjQFRJeM1ee464BbrgvZC53Z/eL8oU1bVCgHnpWSiz0P/sXgn5oC7o
+# yxqPwLZdW/8Rljr9jPohUDVTXsXBEcFXdmh8ugeKAWBT7x3qPLy024mVwP52U9hk
+# hVDmGHmEwXQ1peqK3QYvsB82HzDzbfhHr/fvLn72GexciMr9J7WNYs9iBkTzPkD1
+# 0+20wqxpkTXgdzZpyIKF2sVlfX1EoRjlLpsoLPYA7l5ok51ydagLZAPa9J30/bTF
+# cK+LE9NqmsbbT5rRHNHjELZ7KG86oJEdYmeh553XIFnt4TFRJHUp9q0xY+lCD9fw
+# qu3NTv3geb+ThT9NfV988Z3DRgxuhdjVZObSkrW7L+0AVXf4qr8R8cb+xlYmtTg1
+# YAxB3ItnQpF5
 # SIG # End signature block
