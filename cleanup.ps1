@@ -1,4 +1,4 @@
-﻿$Version = '0.7.5'
+﻿$Version = '0.8.0'
 $Host.UI.RawUI.MaxPhysicalWindowSize.Width=550
 $Host.UI.RawUI.MaxPhysicalWindowSize.Height=300
 $Host.UI.RawUI.WindowTitle="Cleanup Utility" + ' - ' + $Version
