@@ -12,14 +12,15 @@
 Утилита принудительно завершает процессы и удаляет данные пользователей таких приложений, как:  
 1. **Steam**
 2. **Battle.net**
-3. **EA Desktop**
-4. **Epic Games**
-5. **VKPlay**
-6. **Lesta Games**
-7. **Wargaming.net**
-8. **Discord**
-9. **FACEIT**
-10. **Google Chrome**  
+3. **BSG Launcher (Escape From Tarkov)**
+4. **EA Desktop**
+5. **Epic Games**
+6. **VKPlay**
+7. **Lesta Games**
+8. **Wargaming.net**
+9. **Discord**
+10. **FACEIT**
+11. **Google Chrome**  
 
 **Важно!** Во время работы утилиты удаляются настройки некоторых приложений (например, путь установки игр в Battle.net или VK Play)
 
