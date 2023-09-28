@@ -22,6 +22,7 @@ WriteLog "Скрипт начал работу"
 
 #Остановка процессов и служб
 $Processes = (
+    "BsgLauncher",
 	"chrome",
 	"EpicGamesLauncher",
 	"EpicWebHelper",
@@ -81,7 +82,8 @@ $CredentialStores = (
     "$env:appdata\Battle.net\*.config",
     "$env:localappdata\Google\Chrome\User Data\*",
 	"$env:appdata\discord\*",
-	"$env:appdata\FACEIT\*"
+	"$env:appdata\FACEIT\*",
+	"$env:appdata\Battlestate Games\BsgLauncher\settings"
 )
 
 foreach ($CredentialFile in $CredentialStores)
@@ -100,6 +102,7 @@ foreach ($CredentialFile in $CredentialStores)
         'Google' {$Message = 'Профиль пользователя Google Chrome удален'}
         'discord' {$Message = 'Учетные данные Discord удалены'}
         'FACEIT' {$Message = 'Учетные данные FACEIT удалены'}
+        'Battlestate Games' {$Message = 'Учетные данные Battlestate Games удалены'}
     }
 
     if ((Test-Path "$CredentialFile") -eq $true) {
