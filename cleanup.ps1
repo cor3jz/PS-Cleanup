@@ -1,7 +1,5 @@
-﻿$Version = '0.8.1'
-$Host.UI.RawUI.MaxPhysicalWindowSize.Width=550
-$Host.UI.RawUI.MaxPhysicalWindowSize.Height=300
-$Host.UI.RawUI.WindowTitle="Cleanup Utility" + ' - ' + $Version
+﻿$Version = '1.0.0'
+$Host.UI.RawUI.WindowTitle="Cleanup" + ' - ' + $Version
 
 #Log Config
 $LogFile = $env:windir+'\'+'cleanup.log'
@@ -17,24 +15,30 @@ function WriteLog
 }
 Write-Host "Cleanup Utility"
 Write-Host "Выполняется удаление учетных записей и настроек последнего пользователя"
-WriteLog "Cleanup Utility"
+WriteLog "Cleanup Utility [1.0.0]"
 WriteLog "Скрипт начал работу"
 
 #Остановка процессов и служб
 $Processes = (
+	"Battle.net",
     "BsgLauncher",
 	"chrome",
-	"EpicGamesLauncher",
-	"EpicWebHelper",
+	"discord",
 	"EADesktop",
 	"EABackgroundService",
+	"EpicGamesLauncher",
+	"EpicWebHelper",
 	"FACEIT",
+    "firefox",
 	"GameCenter",
-	"discord",
-	"Battle.net",
+	"lgc",
+    "MarketApp",
+    "opera",
+    "RiotClientServices",
 	"Steam",
 	"steamwebhelper",
-	"lgc",
+    "Telegram",
+    "upc",
 	"wgc"
 )
 foreach ($Process in $Processes)
@@ -83,7 +87,13 @@ $CredentialStores = (
     "$env:localappdata\Google\Chrome\User Data\*",
 	"$env:appdata\discord\*",
 	"$env:appdata\FACEIT\*",
-	"$env:appdata\Battlestate Games\BsgLauncher\settings"
+	"$env:appdata\Battlestate Games\BsgLauncher\settings",
+	"$env:appdata\Telegram Desktop\tdata\*",
+	"$env:appdata\marketapp\*",
+    "$env:localappdata\Ubisoft Game Launcher\user.dat",
+    "$env:localappdata\Riot Games\Riot Client\Data\RiotGamesPrivateSettings.yaml",
+	"$env:appdata\Opera Software\Opera GX Stable\*",
+	"$env:appdata\Mozilla\Firefox\*"
 )
 
 foreach ($CredentialFile in $CredentialStores)
@@ -91,18 +101,24 @@ foreach ($CredentialFile in $CredentialStores)
     $FileName = $CredentialFile.Split("\")[5]
 
     switch ($FileName)
-    {
+    {        
+        'Battlestate Games' {$Message = 'Учетные данные Battlestate Games удалены'}
         'Battle.net' {$Message = 'Учетные данные Battle.net удалены'}
         'Electronic Arts' {$Message = 'Учетные данные EA Desktop удалены'}
         'GameCenter' {$Message = 'Учетные данные VK Play удалены'}
         'EpicGamesLauncher' {$Message = 'Учетные данные Epic Games удалены'}
         'Lesta' {$Message = 'Учетные данные Lesta Games удалены'}
         'Steam' {$Message = 'Кэш браузера Steam очищен'}
+        'Telegram Desktop' {$Message = 'Учетные данные Telegram удалены'}
         'Wargaming.net' {$Message = 'Учетные данные Wargaming.net удалены'}
         'Google' {$Message = 'Профиль пользователя Google Chrome удален'}
         'discord' {$Message = 'Учетные данные Discord удалены'}
         'FACEIT' {$Message = 'Учетные данные FACEIT удалены'}
-        'Battlestate Games' {$Message = 'Учетные данные Battlestate Games удалены'}
+        'Ubisoft Game Launcher' {$Message = 'Учетные данные Ubisoft Connect удалены'}
+        'marketapp' {$Message = 'Учетные данные MarketApp удалены'}
+        'Riot Games' {$Message = 'Учетные данные Riot Games удалены'}
+        'Opera Software' {$Message = 'Учетные данные Opera GX удалены'}
+        'Mozilla' {$Message = 'Учетные данные Mozilla Firefox удалены'}
     }
 
     if ((Test-Path "$CredentialFile") -eq $true) {
