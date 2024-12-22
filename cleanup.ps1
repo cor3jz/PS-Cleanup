@@ -1,4 +1,4 @@
-﻿$Version = '1.0.0'
+﻿$Version = '1.0.1'
 $Host.UI.RawUI.WindowTitle="Cleanup" + ' - ' + $Version
 
 #Log Config
@@ -15,7 +15,7 @@ function WriteLog
 }
 Write-Host "Cleanup Utility"
 Write-Host "Выполняется удаление учетных записей и настроек последнего пользователя"
-WriteLog "Cleanup Utility [1.0.0]"
+WriteLog "Cleanup Utility $Version"
 WriteLog "Скрипт начал работу"
 
 #Остановка процессов и служб
@@ -54,29 +54,12 @@ Stop-Service "Steam Client Service" -Force | Add-Content $LogFile
 Write-Host "Служба Steam Client Service остановлена"
 WriteLog "Служба Steam Client Service остановлена"
 
-
-#Очистка уч. записей в Steam
-$SteamPath = ''
-if ((Test-Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam') -eq $true) {
-    $SteamPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath
-} else {
-	Write-Host "Не удалось найти Steam на этом компьютере"
-	WriteLog "Не удалось найти Steam на этом компьютере"
-}
-
-if ((Test-Path "$SteamPath\config\loginusers.vdf") -eq $true)
-{
-	Remove-Item "$SteamPath\config\loginusers.vdf" -Force -ErrorAction SilentlyContinue | Add-Content $LogFile
-	Write-Host "Учетные данные Steam удалены"
-	WriteLog "Учетные данные Steam удалены"
-} else {
-	Write-Host "Учетные данные Steam не обнаружены"
-	WriteLog "Учетные данные Steam не обнаружены"
-}
-Start-Sleep -Seconds 1
+#Путь установки Steam
+$SteamInstallPath = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath
 
 #Удаление учетных данных других приложений
-$CredentialStores = (
+$CleanupPaths = (
+    "$SteamInstallPath\config\loginusers.vdf",
 	"$env:localappdata\Electronic Arts\EA Desktop\cookie.ini",
     "$env:localappdata\GameCenter\GameCenter.ini",
     "$env:localappdata\EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini",
@@ -96,12 +79,13 @@ $CredentialStores = (
 	"$env:appdata\Mozilla\Firefox\*"
 )
 
-foreach ($CredentialFile in $CredentialStores)
+foreach ($CleanupPath in $CleanupPaths)
 {
-    $FileName = $CredentialFile.Split("\")[5]
+    $FileName = $CleanupPath.Split("\")[5]
 
     switch ($FileName)
     {        
+        #Папки приложений
         'Battlestate Games' {$Message = 'Учетные данные Battlestate Games удалены'}
         'Battle.net' {$Message = 'Учетные данные Battle.net удалены'}
         'Electronic Arts' {$Message = 'Учетные данные EA Desktop удалены'}
@@ -119,10 +103,11 @@ foreach ($CredentialFile in $CredentialStores)
         'Riot Games' {$Message = 'Учетные данные Riot Games удалены'}
         'Opera Software' {$Message = 'Учетные данные Opera GX удалены'}
         'Mozilla' {$Message = 'Учетные данные Mozilla Firefox удалены'}
+        'Steam' {$Message = 'Учетные данные Steam удалены'}
     }
 
-    if ((Test-Path "$CredentialFile") -eq $true) {
-        Get-Item $CredentialFile | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Add-Content $Logfile
+    if ((Test-Path "$CleanupPath") -eq $true) {
+        Get-Item $CleanupPath | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Add-Content $Logfile
         WriteLog "$Message"
 	    Write-Host "$Message"
     } else {
@@ -176,8 +161,18 @@ foreach ($Path in $SystemPaths)
 Start-Sleep -Seconds 1
 
 Clear-RecycleBin -Force -ErrorAction SilentlyContinue | Add-Content $LogFile
+
+Write-Host "Корзина очищена"
 WriteLog "Корзина очищена"
 WriteLog "Скрипт завершил свою работу"
 
-Write-Host "Корзина очищена"
-Write-Host "Скрипт завершил свою работу"
+
+Add-Type -AssemblyName System.Windows.Forms
+$global:balmsg = New-Object System.Windows.Forms.NotifyIcon
+$path = (Get-Process -id $pid).Path
+$balmsg.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path)
+$balmsg.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+$balmsg.BalloonTipText = "Скрипт завершил свою работу!"
+$balmsg.BalloonTipTitle = "Cleanup Utility $Version"
+$balmsg.Visible = $true
+$balmsg.ShowBalloonTip(5000)
