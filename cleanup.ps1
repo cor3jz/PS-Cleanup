@@ -1,4 +1,4 @@
-﻿$Version = '1.0.1-dev'
+﻿$Version = '1.0.1'
 $Host.UI.RawUI.WindowTitle="Cleanup" + ' - ' + $Version
 
 #Log Config
@@ -76,13 +76,7 @@ $CleanupPaths = (
     "$env:localappdata\Ubisoft Game Launcher\user.dat",
     "$env:localappdata\Riot Games\Riot Client\Data\RiotGamesPrivateSettings.yaml",
 	"$env:appdata\Opera Software\Opera GX Stable\*",
-	"$env:appdata\Mozilla\Firefox\*",
-    "$env:localappdata\Temp\*",
-	"$env:localappdata\CrashDumps\*",
-	"$env:userprofile\Downloads\*",
-	"$env:userprofile\Pictures\*",
-	"$env:userprofile\Videos\*",
-	"$env:userprofile\Music\*"
+	"$env:appdata\Mozilla\Firefox\*"
 )
 
 foreach ($CleanupPath in $CleanupPaths)
@@ -110,13 +104,6 @@ foreach ($CleanupPath in $CleanupPaths)
         'Opera Software' {$Message = 'Учетные данные Opera GX удалены'}
         'Mozilla' {$Message = 'Учетные данные Mozilla Firefox удалены'}
         'Steam' {$Message = 'Учетные данные Steam удалены'}
-        #Системные папки
-        'Temp' {$Message = 'Временные файлы Windows удалены'}
-        'CrashDumps' {$Message = 'Дампы крашей удалены'}
-        'Downloads' {$Message = 'Папка Загрузки очищена'}
-        'Pictures' {$Message = 'Папка Изображения очищена'}
-        'Videos' {$Message = 'Папка Видео очищена'}
-        'Music' {$Message = 'Папка Музыка очищена'}
     }
 
     if ((Test-Path "$CleanupPath") -eq $true) {
@@ -127,6 +114,48 @@ foreach ($CleanupPath in $CleanupPaths)
         WriteLog "Данные $FileName не обнаружены"
 	    Write-Host "Данные $FileName не обнаружены"
     }
+}
+
+Start-Sleep -Seconds 1
+
+#Очистка системных папок и каталогов пользователя
+$SystemPaths = (
+	"$env:localappdata\Temp",
+	"$env:localappdata\CrashDumps",
+	"$env:userprofile\Downloads",
+	"$env:userprofile\Pictures",
+	"$env:userprofile\Videos",
+	"$env:userprofile\Music"
+)
+foreach ($Path in $SystemPaths)
+{
+    $DirName = $Path.Split("\")[-1]
+
+    switch ($DirName)
+    {
+        'Temp' {$Message = 'Временные файлы Windows удалены'}
+        'CrashDumps' {$Message = 'Дампы крашей удалены'}
+        'Downloads' {$Message = 'Папка Загрузки очищена'}
+        'Pictures' {$Message = 'Папка Изображения очищена'}
+        'Videos' {$Message = 'Папка Видео очищена'}
+        'Music' {$Message = 'Папка Музыка очищена'}
+    }
+
+    if ((Test-Path "$Path") -eq '') {
+        WriteLog "Каталог [$Path] не существует"
+	    Write-Host "Каталог [$Path] не существует"
+        continue
+    }
+
+    if ((Test-Path "$Path\*") -eq '') {
+        WriteLog "Каталог $DirName пуст"
+	    Write-Host "Каталог $DirName пуст"
+        continue
+    }
+
+    Get-ChildItem -Path $Path | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Add-Content $LogFile
+    WriteLog "$Message"
+	Write-Host "$Message"
 }
 
 Start-Sleep -Seconds 1
