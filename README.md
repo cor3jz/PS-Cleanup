@@ -30,6 +30,7 @@
 15. **Ubisoft Connect**
 16. **VKPlay**
 17. **Wargaming.net**
+18. **Arena Breakout Infinite**
 
 > [!IMPORTANT] 
 > Во время работы утилиты удаляются настройки некоторых приложений (например, путь установки игр в Battle.net или VK Play)
