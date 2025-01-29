@@ -39,7 +39,8 @@ $Processes = (
 	"steamwebhelper",
     "Telegram",
     "upc",
-	"wgc"
+	"wgc",
+    "arena_breakout_infinite_launcher"
 )
 foreach ($Process in $Processes)
 {
@@ -76,7 +77,9 @@ $CleanupPaths = (
     "$env:localappdata\Ubisoft Game Launcher\user.dat",
     "$env:localappdata\Riot Games\Riot Client\Data\RiotGamesPrivateSettings.yaml",
 	"$env:appdata\Opera Software\Opera GX Stable\*",
-	"$env:appdata\Mozilla\Firefox\*"
+	"$env:appdata\Mozilla\Firefox\*",
+    "$env:appdata\arena_breakout_infinite_launcher\last_user.dat"
+
 )
 
 foreach ($CleanupPath in $CleanupPaths)
@@ -104,6 +107,7 @@ foreach ($CleanupPath in $CleanupPaths)
         'Opera Software' {$Message = 'Учетные данные Opera GX удалены'}
         'Mozilla' {$Message = 'Учетные данные Mozilla Firefox удалены'}
         'Steam' {$Message = 'Учетные данные Steam удалены'}
+        'arena_breakout_infinite_launcher' {$Message = 'Учетные данные Arena Breakout Infinite удалены'}
     }
 
     if ((Test-Path "$CleanupPath") -eq $true) {
