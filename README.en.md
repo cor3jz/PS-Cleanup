@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="360" height="240" src="./assets/Cleanup Card.jpg">
+<img width="360" height="240" src="./assets/Card.jpg">
 
 # Cleanup Utility
 
@@ -40,7 +40,7 @@ Once launched, Cleanup automatically terminates necessary processes and deletes 
     - Lesta Games
     - Wargaming.net
     - Ubisoft Connect
-    - BSG Launcher
+    - Battlestate Games
     - Arena Breakout Infinite
 
 2. **Connectivity**
@@ -65,9 +65,5 @@ Once launched, Cleanup automatically terminates necessary processes and deletes 
 1. Download the installer **[here](https://github.com/cor3jz/PS-Cleanup/releases/latest)**
 2. Install Cleanup in any convenient location, or leave the default installation folder
 3. To clean by default (all applications), just add a `cleanup'.exe` to auto-upload in any convenient way
-4. To exclude an application(s) from cleaning, add the startup parameter `-Skip` and the names of the applications that will be excluded.
-5. Specify the names as written in the list [in the section above](#removing-credentials)
-
-
-| ![Example1](/assets/smartshell_example_1.png) | ![Example2](/assets/smartshell_example_2.png) |
-| Example of autorun Cleanup, without cleaning Steam, Chrome and VK Play | An example of a regular startup Cleanup, with all applications cleaned by default |
+4. To exclude an application(s) from cleaning, add the startup parameter `-SkipApps` and the names of the applications that will be excluded.
+5. Specify the names of programs to exclude as written in the `how-to-use.txt` file, which is located in the Cleanup installation folder.

@@ -1,22 +1,35 @@
 ﻿param (
-    [string[]]$Skip
+    [string[]]$SkipApps = @()
 )
 
-$Title = "Cleanup"
-$Version = "2.0.0-beta"
-$Host.UI.RawUI.WindowTitle= $Title + ' - ' + $Version
+# ===== Проверка прав администратора =====
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Host "Ошибка: Скрипт требует запуска от имени Администратора!" -ForegroundColor Red
+    Write-Host "Попробуйте запустить PowerShell от имени Администратора и повторите." -ForegroundColor Yellow
+    
+    # Опционально: автоматический перезапуск с правами админа
+    $choice = Read-Host "Перезапустить скрипт от имени Администратора? (Y/N)"
+    if ($choice -eq 'Y' -or $choice -eq 'y') {
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`"" -Verb RunAs
+    }
+    exit 1
+}
 
-# Лог файл
+$Title = "Cleanup Utility"
+$Version = (Get-Content -Path 'version.json' -Raw | ConvertFrom-Json).version
+
+$Host.UI.RawUI.WindowTitle = "$Title - $Version"
+
 $logFile = Join-Path $PSScriptRoot 'debug.log'
-
 if (Test-Path -Path $logFile -PathType Leaf) {
-    Remove-Item -Path $logFile
+    Remove-Item -Path $logFile -Force
 }
 
 function Write-Log {
     param (
         [string]$message,
-        [ValidateSet("INFO", "ERROR", "DEBUG", "WARNING")]
+        [ValidateSet("INFO", "WARNING", "ERROR", "DEBUG")]
         [string]$level = "INFO"
     )
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -24,9 +37,7 @@ function Write-Log {
     Add-Content -Path $logFile -Value $logEntry -Encoding UTF8
 }
 
-# Список программ для очистки
 $programs = @(
-    # Лаунчеры
     @{
         Name = "Steam";
         Process = @("Steam", "steamwebhelper");
@@ -80,17 +91,16 @@ $programs = @(
         Path = Join-Path $env:localappdata 'EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini';
     },
     @{
-        Name = "Battlestate Games";
+        Name = "BSG";
         Process = @("BsgLauncher");
         Path = Join-Path $env:appdata 'Battlestate Games\BsgLauncher\settings';
     },
     @{
-        Name = "Arena Breakout Infinite";
+        Name = "ABI";
         Process = @("arena_breakout_infinite_launcher");
         Path = Join-Path $env:appdata 'arena_breakout_infinite_launcher\last_user.dat';
     },
 
-    # Общение
     @{
         Name = "Discord";
         Process = @("discord");
@@ -107,7 +117,7 @@ $programs = @(
         Path = Join-Path $env:appdata 'TS3Client\settings.db';
     },
     @{
-        Name = "TeamSpeak";
+        Name = "TeamSpeak 6";
         Process = @("TeamSpeak");
         Path = Join-Path $env:appdata 'TeamSpeak\Default';
     },
@@ -117,7 +127,6 @@ $programs = @(
         Path = Join-Path $env:localappdata 'Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState';
     },
 
-    # Браузеры
     @{
         Name = "Google Chrome";
         Process = @("chrome");
@@ -132,9 +141,13 @@ $programs = @(
         Name = "Opera GX";
         Process = @("opera");
         Path = Join-Path $env:appdata 'Opera Software\Opera GX Stable';
-    }
-
-    # Другое
+    },
+    @{  
+        Name = "Edge";
+        Process = @("msedge");
+        Path = Join-Path $env:localappdata 'Microsoft\Edge\User Data';
+    },
+    
     @{
         Name = "FACEIT";
         Process = @("FACEIT");
@@ -147,58 +160,33 @@ $programs = @(
     }
 )
 
-# Функция для завершения процессов
 function Stop-Processes {
     $total = $programs.Count
     $i = 0
-    
+    $allProcessNames = $programs.Process | Select-Object -Unique
+    $runningProcesses = Get-Process -Name $allProcessNames -ErrorAction SilentlyContinue
+
     foreach ($program in $programs) {
         $i++
-        $percent = [int](($i / $total) * 100)
-        Write-Progress -Activity "Завершение работы программ" -Status "$($program.Name)" -PercentComplete $percent
+        Write-Progress -Activity "Завершение процессов" -Status "$($program.Name)" -PercentComplete (($i / $total) * 100)
         
-        $name = $program.Name
-
-        $processList = @()
-        if ($program.Process -is [Array]) {
-            $processList = $program.Process
-        } else {
-            $processList = @($program.Process)
-        }
-
-        if ($Skip -contains $name) {
-            Write-Log -message "$name исключен, пропускаем."
+        if ($SkipApps -contains $program.Name) {
+            Write-Log -message "$($program.Name) исключен, пропускаем."
             continue
         }
 
-        Write-Log -message "Завершение работы $name."
-
         $processStopped = $false
-
-        foreach ($processName in $processList) {
-            try {
-                $processes = Get-Process -Name $processName -ErrorAction SilentlyContinue
-                if ($processes) {
-                    foreach ($proc in $processes) {
-                        $proc | Stop-Process -Force
-                        Write-Log -message "Процесс [$processName] (PID: $($proc.Id)) завершен"
-                    }
-                    $processStopped = $true
-                } else {
-                    Write-Log -message "Процесс [$processName] не найден"
-                }
-            } catch {
-                Write-Log -level "ERROR" -message "Произошла ошибка при завершении процесса ${processName}: $_"
+        foreach ($processName in $program.Process) {
+            $procs = $runningProcesses | Where-Object { $_.Name -eq $processName }
+            if ($procs) {
+                $procs | Stop-Process -Force -WhatIf
+                Write-Log -message "Процесс $processName завершен."
+                $processStopped = $true
             }
         }
-
-        if ($processStopped) {
-            Write-Log -message "Работа $name завершена!"
-        }
-        
+        if ($processStopped) { Write-Log -message "Все процессы $($program.Name) остановлены." }
     }
-
-    Write-Progress -Activity "Завершение работы программ" -Completed
+    Write-Progress -Activity "Завершение процессов" -Completed
 }
 
 function Remove-CredentialsFromConfig {
@@ -207,12 +195,10 @@ function Remove-CredentialsFromConfig {
         [string]$FileType,
         [string[]]$KeysToRemove
     )
-
-    if (!(Test-Path $FilePath)) {
-        Write-Log -level "ERROR" -message "Файл не найден: `"$FilePath`""
-        return
+    if (-not (Test-Path $FilePath)) { 
+        Write-Log -level "ERROR" -message "Файл не найден: $FilePath"
+        return 
     }
-
     try {
         switch ($FileType.ToLower()) {
             'json' {
@@ -220,112 +206,70 @@ function Remove-CredentialsFromConfig {
                 foreach ($key in $KeysToRemove) {
                     if ($content.Client.PSObject.Properties.Name -contains $key) {
                         $content.Client.PSObject.Properties.Remove($key)
+                        Write-Log -message "Удален ключ $key из $FilePath"
                     }
                 }
-                Write-Log -level "DEBUG" -message "Файл конфигурации изменен: `"$FilePath`""
-                $content | ConvertTo-Json -Depth 10 | Set-Content -Path $FilePath -Encoding UTF8
+                $content | ConvertTo-Json -Depth 10 | Set-Content $FilePath -Encoding UTF8
             }
             'ini' {
                 $lines = Get-Content $FilePath
                 $filtered = $lines | Where-Object { $line = $_; -not ($KeysToRemove | Where-Object { $line -match "^\s*$_\s*=" }) }
-                $filtered | Set-Content -Path $FilePath -Encoding UTF8
-                Write-Log -level "DEBUG" -message "Файл конфигурации изменен: `"$FilePath`""
+                $filtered | Set-Content $FilePath -Encoding UTF8
             }
         }
     } catch {
-        Write-Log -level "ERROR" -message "Ошибка при очистке ${FilePath}: $_"
+        Write-Log -level "ERROR" -message "Ошибка при обработке $FilePath : $_"
     }
 }
 
-# Функция для удаления данных
 function Clear-Data {
-    param (
-        [string]$programName,
-        [hashtable]$program,
-        [int]$index,
-        [int]$total
-    )
+    $total = $programs.Count
+    $i = 0
+    foreach ($program in $programs) {
+        $i++
+        Write-Progress -Activity "Очистка данных" -Status "$($program.Name)" -PercentComplete (($i / $total) * 100)
+        
+        if ($SkipApps -contains $program.Name) {
+            Write-Log -message "$($program.Name) исключен, пропускаем."
+            continue
+        }
 
-    $percentComplete = [int](($index / $total) * 100)
-    Write-Progress -Activity "Очистка данных" -Status "Обрабатывается: $programName ($index из $total)" -PercentComplete $percentComplete
+        if (-not (Test-Path $program.Path)) {
+            Write-Log -message "Путь $($program.Path) не найден."
+            continue
+        }
 
-    $path = $program.Path
-
-    if ($Skip -contains $programName) {
-        Write-Log -message "$programName исключен, пропускаем"
-        return
-    }
-
-    if (-not (Test-Path $path)) {
-        Write-Log -message "Данные $programName не обнаружены"
-        return
-    }
-
-    $files = Get-ChildItem -Path $path -Force
-
-    if ($program.ContainsKey("FileType") -and $program.ContainsKey("KeysToRemove")) {
-        Remove-CredentialsFromConfig -FilePath $path -FileType $program.FileType -KeysToRemove $program.KeysToRemove
-        Write-Log -message "Данные $programName удалены"
-    } else {
-        if ($files.Count -gt 0) {
-            try {
-                Get-ChildItem -Path $path -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-                Write-Log -message "Данные $programName удалены, путь: `"$path`""
-            } catch {
-                Write-Log -level "ERROR" -message "Произошла ошибка при очистке данных ${programName}: $_"
-            }
+        if ($program.ContainsKey("FileType") -and $program.ContainsKey("KeysToRemove")) {
+            Remove-CredentialsFromConfig -FilePath $program.Path -FileType $program.FileType -KeysToRemove $program.KeysToRemove
         } else {
-            Write-Log -message "Данные $programName не обнаружены"
+            Remove-Item -Path $program.Path -Recurse -Force -ErrorAction SilentlyContinue -WhatIf
+            Write-Log -message "Данные $($program.Name) удалены."
         }
     }
+    Write-Progress -Activity "Очистка данных" -Completed
 }
 
-# Логирование начала работы
-Write-Host "$Title - $Version"
+
+Write-Host "$Title - $Version" -ForegroundColor Cyan
 Write-Log -message "$Title - $Version"
 
-Write-Host "Очистка данных сессии пользователя..."
-Write-Log -message "Очистка данных сессии пользователя..."
-
-# Завершаем работу программ
-Write-Host "Завершаем работу программ для очистки..."
-Write-Log -message "Завершаем работу программ для очистки..."
-
 Stop-Processes
-
-Write-Log -message "Работа программ завершена."
-
-Start-Sleep -Seconds 2
-
-Write-Host "Удаляем данные..."
-Write-Log -message "Удаляем данные..."
-
-# Удаляем данные для каждой программы, кроме исключенных
-$i = 1
-$total = $programs.Count
-foreach ($program in $programs) {
-    $name = $program.Name
-    Clear-Data -programName $name -program $program -index $i -total $total
-    $i++
-}
-Write-Progress -Activity "Очистка данных" -Completed
-
 Start-Sleep -Seconds 1
+Clear-Data
 
-# Логирование завершения работы
-Write-Log -message "Завершение работы скрипта..."
-Write-Log -message "Очистка успешно завершена!"
-Write-Host "Очистка успешно завершена!"
+Write-Host "Очистка успешно завершена!" -ForegroundColor Green
+Write-Log -message "Скрипт завершил работу"
 
-# Уведомление о завершении работы программы
-[System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
-$global:balloon = New-Object System.Windows.Forms.NotifyIcon
-$path = (Get-Process -id $pid).Path
-$balloon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path)
-$balloon.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
-$balloon.BalloonTipText = "Очистка успешно завершена!"
-$balloon.BalloonTipTitle = $Title
-$balloon.Visible = $true
-$balloon.ShowBalloonTip(5000)
-Start-Sleep 5
-$balloon.Dispose();
+try {
+    Add-Type -AssemblyName System.Windows.Forms
+    $notify = New-Object System.Windows.Forms.NotifyIcon
+    $notify.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Get-Process -Id $PID).Path)
+    $notify.BalloonTipTitle = $Title
+    $notify.BalloonTipText = "Очистка завершена!"
+    $notify.Visible = $true
+    $notify.ShowBalloonTip(3000)
+    Start-Sleep -Seconds 3
+    $notify.Dispose()
+} catch {
+    Write-Log -level "ERROR" -message "Не удалось показать уведомление: $_"
+}
