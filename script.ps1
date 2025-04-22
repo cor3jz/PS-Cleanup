@@ -1,17 +1,16 @@
 ﻿param (
-    [string[]]$SkipApps = @()
+    [string[]]$SkipApps = @(),
+    [string[]]$SkipSystemFolders = @()
 )
 
-# ===== Проверка прав администратора =====
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "Ошибка: Скрипт требует запуска от имени Администратора!" -ForegroundColor Red
+    Write-Host "Ошибка: для запуска нужны права Администратора!" -ForegroundColor Red
     Write-Host "Попробуйте запустить PowerShell от имени Администратора и повторите." -ForegroundColor Yellow
     
-    # Опционально: автоматический перезапуск с правами админа
     $choice = Read-Host "Перезапустить скрипт от имени Администратора? (Y/N)"
     if ($choice -eq 'Y' -or $choice -eq 'y') {
-        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`"" -Verb RunAs
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`" -SkipSystemFolders `"$($SkipSystemFolders -join ',')`"" -Verb RunAs
     }
     exit 1
 }
@@ -147,6 +146,11 @@ $programs = @(
         Process = @("msedge");
         Path = Join-Path $env:localappdata 'Microsoft\Edge\User Data';
     },
+    @{  
+        Name = "Yandex";
+        Process = @("browser");
+        Path = Join-Path $env:localappdata 'Yandex\YandexBrowser\User Data';
+    },
     
     @{
         Name = "FACEIT";
@@ -158,6 +162,19 @@ $programs = @(
         Process = @("MarketApp");
         Path = Join-Path $env:appdata 'marketapp';
     }
+)
+
+$systemFolders = @(
+    @{ Name = "Загрузки"; Path = [Environment]::GetFolderPath("UserProfile") + "\Downloads" },
+    @{ Name = "Изображения"; Path = [Environment]::GetFolderPath("MyPictures") },
+    @{ Name = "Видео"; Path = [Environment]::GetFolderPath("MyVideos") },
+    @{ Name = "Музыка"; Path = [Environment]::GetFolderPath("MyMusic") },
+    @{ Name = "Temp"; Path = $env:TEMP },
+    @{ Name = "SystemTemp"; Path = "$env:SystemRoot\Temp" },
+    @{ Name = "CrashDumps"; Path = "$env:LOCALAPPDATA\CrashDumps" },
+    @{ Name = "Кэш браузеров"; Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache" },
+    @{ Name = "Журналы Windows"; Path = "$env:SystemRoot\Logs" },
+    @{ Name = "Thumbnails"; Path = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer" }
 )
 
 function Stop-Processes {
@@ -179,7 +196,7 @@ function Stop-Processes {
         foreach ($processName in $program.Process) {
             $procs = $runningProcesses | Where-Object { $_.Name -eq $processName }
             if ($procs) {
-                $procs | Stop-Process -Force -WhatIf
+                $procs | Stop-Process -Force 
                 Write-Log -message "Процесс $processName завершен."
                 $processStopped = $true
             }
@@ -242,20 +259,53 @@ function Clear-Data {
         if ($program.ContainsKey("FileType") -and $program.ContainsKey("KeysToRemove")) {
             Remove-CredentialsFromConfig -FilePath $program.Path -FileType $program.FileType -KeysToRemove $program.KeysToRemove
         } else {
-            Remove-Item -Path $program.Path -Recurse -Force -ErrorAction SilentlyContinue -WhatIf
+            Remove-Item -Path $program.Path -Recurse -Force  -ErrorAction SilentlyContinue
             Write-Log -message "Данные $($program.Name) удалены."
         }
     }
     Write-Progress -Activity "Очистка данных" -Completed
 }
 
+function Clear-SystemFolders {
+    $total = $systemFolders.Count
+    $i = 0
+    
+    foreach ($folder in $systemFolders) {
+        $i++
+        Write-Progress -Activity "Очистка системных папок" -Status "$($folder.Name)" -PercentComplete (($i / $total) * 100)
+        
+        if ($SkipSystemFolders -contains $folder.Name) {
+            Write-Log -message "Папка $($folder.Name) исключена."
+            continue
+        }
+
+        if (-not (Test-Path $folder.Path)) {
+            Write-Log -message "Папка $($folder.Path) не найдена."
+            continue
+        }
+
+        try {
+            Get-ChildItem -Path $folder.Path -Recurse -Force | Remove-Item  -Force -Recurse -ErrorAction Stop
+            Write-Log -message "Очищено: $($folder.Name) ($($folder.Path))"
+        } catch {
+            Write-Log -level "ERROR" -message "Ошибка при очистке $($folder.Path): $_"
+        }
+    }
+    Write-Progress -Activity "Очистка системных папок" -Completed
+}
 
 Write-Host "$Title - $Version" -ForegroundColor Cyan
 Write-Log -message "$Title - $Version"
 
 Stop-Processes
 Start-Sleep -Seconds 1
+Write-Log -level "DEBUG" -message "Очистка данных"
 Clear-Data
+Write-Log -level "DEBUG" -message "Очистка папок"
+Clear-SystemFolders
+
+Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+Write-Log -message "Корзина очищена"
 
 Write-Host "Очистка успешно завершена!" -ForegroundColor Green
 Write-Log -message "Скрипт завершил работу"
