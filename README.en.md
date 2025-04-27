@@ -106,8 +106,8 @@ C:\Path\To\Cleanup.exe -SkipApps "Steam", "Chrome" -SkipFolders "Downloads", "Te
 
 ## Updates
 
-Cleanup can automatically update to the latest version. Run `update.exe` to check for updates and download the new version.
-You can also add `update.exe` to the task scheduler to check for updates automatically.
+Cleanup can automatically update to the latest version. Run `updater.exe` to check for updates and download the new version.
+You can also add `updater.exe` to the task scheduler to check for updates automatically.
 
 > Example of a weekly update check:
 ```
