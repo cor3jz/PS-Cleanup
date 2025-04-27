@@ -102,7 +102,7 @@ if ($remoteVer -gt $localVer) {
     try {
         $apiUrl = "https://api.github.com/repos/$GitHubRepoOwner/$GitHubRepoName/releases/latest"
         $releaseInfo = Invoke-RestMethod -Uri $apiUrl -Method Get
-        $zipUrl = $releaseInfo.assets.browser_download_url
+        $zipUrl = $releaseInfo.assets[0].browser_download_url
         
         if (-not $zipUrl) {
             throw "Не найдена ссылка для скачивания"
