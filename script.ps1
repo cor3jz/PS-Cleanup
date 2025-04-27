@@ -1,6 +1,6 @@
 ﻿param (
     [string[]]$SkipApps = @(),
-    [string[]]$SkipSystemFolders = @()
+    [string[]]$SkipFolders = @()
 )
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -10,7 +10,7 @@ if (-not $isAdmin) {
     
     $choice = Read-Host "Перезапустить скрипт от имени Администратора? (Y/N)"
     if ($choice -eq 'Y' -or $choice -eq 'y') {
-        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`" -SkipSystemFolders `"$($SkipSystemFolders -join ',')`"" -Verb RunAs
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`" -SkipFolders `"$($SkipFolders -join ',')`"" -Verb RunAs
     }
     exit 1
 }
@@ -43,6 +43,11 @@ $programs = @(
         Path = Join-Path (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath 'config\loginusers.vdf';
     },
     @{
+        Name = "EA";
+        Process = @("EADesktop", "EABackgroundService");
+        Path = Join-Path $env:localappdata 'Electronic Arts\EA Desktop';
+    },
+    @{
         Name = "Battle.net";
         Process = @("Battle.net");
         Path = Join-Path $env:appdata 'Battle.net\Battle.net.config';
@@ -50,19 +55,11 @@ $programs = @(
         KeysToRemove = @("GaClientId", "AutoLogin", "SavedAccountNames");
     },
     @{
-        Name = "EA";
-        Process = @("EADesktop", "EABackgroundService");
-        Path = Join-Path $env:localappdata 'Electronic Arts\EA Desktop';
-    },
-    @{
         Name = "VK Play";
         Process = @("GameCenter");
         Path = Join-Path $env:localappdata 'GameCenter\GameCenter.ini';
         FileType = "ini"; 
-        KeysToRemove = @(
-            "MyComUserMagic4", "FirstAuth", "LastAUITime", "MyComUserMagic2",
-            "MyComUserLogin", "MyComUserUid", "CurrentUserName", "CurrentUserNick"
-        );
+        KeysToRemove = @("LastAGSTime", "LastAUITime", "MyComUserMagic", "cLastLoginTime", "MyComUserMagic4", "FirstAuth", "LastAUITime", "MyComUserMagic2", "MyComUserLogin", "MyComUserUid", "CurrentUserName", "CurrentUserNick", "CurrentUserAvatarFileName");
     },
     @{
         Name = "Riot Games";
@@ -90,14 +87,24 @@ $programs = @(
         Path = Join-Path $env:localappdata 'EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini';
     },
     @{
-        Name = "BSG";
+        Name = "BSGLauncher";
         Process = @("BsgLauncher");
         Path = Join-Path $env:appdata 'Battlestate Games\BsgLauncher\settings';
     },
     @{
-        Name = "ABI";
+        Name = "Arena Breakout";
         Process = @("arena_breakout_infinite_launcher");
         Path = Join-Path $env:appdata 'arena_breakout_infinite_launcher\last_user.dat';
+    },
+    @{
+        Name = "Rockstar Games";
+        Process = @("Launcher");
+        Path = Join-Path $env:userprofile 'Documents\Rockstar Games\Social Club\Profiles';
+    },
+    @{
+        Name = "Roblox";
+        Process = @("RobloxPlayerBeta");
+        Path = Join-Path $env:localappdata 'Roblox\LocalStorage\RobloxCookies.dat';
     },
 
     @{
@@ -127,17 +134,17 @@ $programs = @(
     },
 
     @{
-        Name = "Google Chrome";
+        Name = "Chrome";
         Process = @("chrome");
         Path = Join-Path $env:localappdata 'Google\Chrome\User Data';
     },
     @{
-        Name = "Mozilla Firefox";
+        Name = "Firefox";
         Process = @("firefox");
         Path = Join-Path $env:appdata 'Mozilla\Firefox';
     },
     @{
-        Name = "Opera GX";
+        Name = "Opera";
         Process = @("opera");
         Path = Join-Path $env:appdata 'Opera Software\Opera GX Stable';
     },
@@ -165,43 +172,52 @@ $programs = @(
 )
 
 $systemFolders = @(
-    @{ Name = "Загрузки"; Path = [Environment]::GetFolderPath("UserProfile") + "\Downloads" },
-    @{ Name = "Изображения"; Path = [Environment]::GetFolderPath("MyPictures") },
-    @{ Name = "Видео"; Path = [Environment]::GetFolderPath("MyVideos") },
-    @{ Name = "Музыка"; Path = [Environment]::GetFolderPath("MyMusic") },
+    @{ Name = "Downloads"; Path = [Environment]::GetFolderPath("UserProfile") + "\Downloads" },
+    @{ Name = "Images"; Path = [Environment]::GetFolderPath("MyPictures") },
+    @{ Name = "Video"; Path = [Environment]::GetFolderPath("MyVideos") },
+    @{ Name = "Music"; Path = [Environment]::GetFolderPath("MyMusic") },
     @{ Name = "Temp"; Path = $env:TEMP },
     @{ Name = "SystemTemp"; Path = "$env:SystemRoot\Temp" },
     @{ Name = "CrashDumps"; Path = "$env:LOCALAPPDATA\CrashDumps" },
-    @{ Name = "Кэш браузеров"; Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache" },
-    @{ Name = "Журналы Windows"; Path = "$env:SystemRoot\Logs" },
     @{ Name = "Thumbnails"; Path = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer" }
 )
 
 function Stop-Processes {
     $total = $programs.Count
     $i = 0
-    $allProcessNames = $programs.Process | Select-Object -Unique
-    $runningProcesses = Get-Process -Name $allProcessNames -ErrorAction SilentlyContinue
+    $allProcessNames = $programs | ForEach-Object { $_.Process } | Where-Object { $_ -ne $null } | Select-Object -Unique
+    $runningProcesses = Get-Process -Name $allProcessNames -ErrorAction SilentlyContinue | Group-Object -Property Name -AsHashTable
 
     foreach ($program in $programs) {
         $i++
-        Write-Progress -Activity "Завершение процессов" -Status "$($program.Name)" -PercentComplete (($i / $total) * 100)
+        $percent = [math]::Round(($i / $total) * 100)
+        Write-Progress -Activity "Завершение процессов" -Status "$($program.Name)" -PercentComplete $percent
+        
         
         if ($SkipApps -contains $program.Name) {
-            Write-Log -message "$($program.Name) исключен, пропускаем."
+            Write-Log -level "INFO" -message "$($program.Name) исключен, пропускаем."
             continue
         }
 
         $processStopped = $false
+        
         foreach ($processName in $program.Process) {
-            $procs = $runningProcesses | Where-Object { $_.Name -eq $processName }
-            if ($procs) {
-                $procs | Stop-Process -Force 
-                Write-Log -message "Процесс $processName завершен."
-                $processStopped = $true
+            if (-not $processName) { continue }
+            
+            if ($runningProcesses.ContainsKey($processName)) {
+                foreach ($proc in $runningProcesses[$processName]) {
+                    try {                        
+                        $proc | Stop-Process -Force -ErrorAction Stop
+                        Write-Log -level "DEBUG" "Успешно завершён процесс $($proc.Name), PID:($($proc.Id))"
+                        $processStopped = $true
+                    }
+                    catch {
+                        Write-Log -level "ERROR" "Ошибка при завершении $($proc.Name) ($($proc.Id)): $_"
+                    }
+                }
             }
         }
-        if ($processStopped) { Write-Log -message "Все процессы $($program.Name) остановлены." }
+        if ($processStopped) { Write-Log -level "INFO" -message "Все процессы $($program.Name) остановлены" }
     }
     Write-Progress -Activity "Завершение процессов" -Completed
 }
@@ -212,30 +228,33 @@ function Remove-CredentialsFromConfig {
         [string]$FileType,
         [string[]]$KeysToRemove
     )
-    if (-not (Test-Path $FilePath)) { 
-        Write-Log -level "ERROR" -message "Файл не найден: $FilePath"
-        return 
+
+    if (!(Test-Path $FilePath)) {
+        Write-Log -level "ERROR" -message "Файл конфигурации не найден: `"$FilePath`""
+        return
     }
+
     try {
         switch ($FileType.ToLower()) {
             'json' {
-                $content = Get-Content $FilePath -Raw | ConvertFrom-Json -Depth 10
+                $content = Get-Content $FilePath -Raw | ConvertFrom-Json
                 foreach ($key in $KeysToRemove) {
                     if ($content.Client.PSObject.Properties.Name -contains $key) {
                         $content.Client.PSObject.Properties.Remove($key)
-                        Write-Log -message "Удален ключ $key из $FilePath"
                     }
                 }
-                $content | ConvertTo-Json -Depth 10 | Set-Content $FilePath -Encoding UTF8
+                Write-Log -level "DEBUG" -message "Файл конфигурации изменен: `"$FilePath`""
+                $content | ConvertTo-Json | Set-Content -Path $FilePath -Encoding UTF8
             }
             'ini' {
                 $lines = Get-Content $FilePath
                 $filtered = $lines | Where-Object { $line = $_; -not ($KeysToRemove | Where-Object { $line -match "^\s*$_\s*=" }) }
-                $filtered | Set-Content $FilePath -Encoding UTF8
+                $filtered | Set-Content -Path $FilePath -Encoding UTF8
+                Write-Log -level "DEBUG" -message "Файл конфигурации изменен: `"$FilePath`""
             }
         }
     } catch {
-        Write-Log -level "ERROR" -message "Ошибка при обработке $FilePath : $_"
+        Write-Log -level "ERROR" -message "Ошибка при очистке ${FilePath}: $_"
     }
 }
 
@@ -259,7 +278,7 @@ function Clear-Data {
         if ($program.ContainsKey("FileType") -and $program.ContainsKey("KeysToRemove")) {
             Remove-CredentialsFromConfig -FilePath $program.Path -FileType $program.FileType -KeysToRemove $program.KeysToRemove
         } else {
-            Remove-Item -Path $program.Path -Recurse -Force  -ErrorAction SilentlyContinue
+            Remove-Item -Path $program.Path -Recurse -Force -ErrorAction SilentlyContinue
             Write-Log -message "Данные $($program.Name) удалены."
         }
     }
@@ -274,7 +293,7 @@ function Clear-SystemFolders {
         $i++
         Write-Progress -Activity "Очистка системных папок" -Status "$($folder.Name)" -PercentComplete (($i / $total) * 100)
         
-        if ($SkipSystemFolders -contains $folder.Name) {
+        if ($SkipFolders -contains $folder.Name) {
             Write-Log -message "Папка $($folder.Name) исключена."
             continue
         }
@@ -285,7 +304,7 @@ function Clear-SystemFolders {
         }
 
         try {
-            Get-ChildItem -Path $folder.Path -Recurse -Force | Remove-Item  -Force -Recurse -ErrorAction Stop
+            Get-ChildItem -Path $folder.Path -Recurse -Force | Remove-Item -Force -Recurse -ErrorAction Stop
             Write-Log -message "Очищено: $($folder.Name) ($($folder.Path))"
         } catch {
             Write-Log -level "ERROR" -message "Ошибка при очистке $($folder.Path): $_"
@@ -297,18 +316,22 @@ function Clear-SystemFolders {
 Write-Host "$Title - $Version" -ForegroundColor Cyan
 Write-Log -message "$Title - $Version"
 
+Write-Log -level "DEBUG" -message "========== Завершение процессов =========="
 Stop-Processes
 Start-Sleep -Seconds 1
-Write-Log -level "DEBUG" -message "Очистка данных"
+Write-Log -level "DEBUG" -message "========== Очистка данных приложений =========="
 Clear-Data
-Write-Log -level "DEBUG" -message "Очистка папок"
+Start-Sleep -Seconds 1
+Write-Log -level "DEBUG" -message "========== Очистка системных папок =========="
 Clear-SystemFolders
 
 Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 Write-Log -message "Корзина очищена"
 
 Write-Host "Очистка успешно завершена!" -ForegroundColor Green
-Write-Log -message "Скрипт завершил работу"
+
+Write-Log -message "========== Очистка успешно завершена =========="
+Write-Log -level "DEBUG" -message "Скрипт завершил работу"
 
 try {
     Add-Type -AssemblyName System.Windows.Forms

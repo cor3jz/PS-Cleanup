@@ -12,6 +12,7 @@
 .history/*
 
 /Build
-/Docs
 /utils
+/assets/icons/*
 debug.log
+update-debug.log
