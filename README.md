@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="360" height="240" src="./assets/card.jpg">
+![Card](./assets/card.jpg)
 
 # Cleanup Utility
 
@@ -119,10 +119,10 @@ C:\Path\To\Cleanup.exe -SkipApps "Steam", "Chrome" -SkipFolders "Downloads", "Te
 
 ## Обновления
 
-Cleanup может автоматически обновляться до последней версии. Запустите `update.exe` для проверки наличия обновлений и загрузки новой версии.
-Также вы можете добавить `update.exe` в планировщик задач, для автоматической проверки обновлений.
+Cleanup может автоматически обновляться до последней версии. Запустите `updater.exe` для проверки наличия обновлений и загрузки новой версии.
+Также вы можете добавить `updater.exe` в планировщик задач, для автоматической проверки обновлений.
 
-Пример еженедельной проверки обновления:
+> Пример еженедельной проверки обновления:
 ```
 # Создание задачи с помощью schtasks.exe
 schtasks /CREATE /TN "Cleanup Update Checker" /TR "C:\Path\To\update.exe" /SC WEEKLY /D MON /ST 09:00 /RU "SYSTEM" /RL HIGHEST /F
