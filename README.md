@@ -127,3 +127,27 @@ Cleanup может автоматически обновляться до пос
 # Создание задачи с помощью schtasks.exe
 schtasks /CREATE /TN "Cleanup Update Checker" /TR "C:\Path\To\update.exe" /SC WEEKLY /D MON /ST 09:00 /RU "SYSTEM" /RL HIGHEST /F
 ```
+
+## Дополнение
+
+Cleanup удаляет каталог пользователя Google Chrome, в котором также хранятся установленные расширения. Чтобы не устанавливать постоянно вручную нужны расширения, в папке с утилитой есть `.reg` файл, после запуска которого указанные в этом файле расширения будут устанавливаться автоматически.
+
+>ExtensionsForceInstall.reg
+
+```
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Software\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="mokknliiomknodkdmpcellamkopbdmao;https://clients2.google.com/service/update2/crx"
+"2"="ID_расширения;https://clients2.google.com/service/update2/crx"
+"3"="ID_расширения;https://clients2.google.com/service/update2/crx"
+```
+ID_расширения можно найти на его странице в магазине расширений Chrome в адресной строке браузера.
+
+>Пример с Repeek:
+
+https://chromewebstore.google.com/detail/repeek-formerly-faceit-en/<ins>***mokknliiomknodkdmpcellamkopbdmao***</ins>?hl=ru&utm_source=ext_sidebar
+
+Выделенная строка и является ID расширения.
+
+Добавьте необходимые расширения в файл, сохраните и запустите. В диалоговом окне нажмите "Да". Готово =)

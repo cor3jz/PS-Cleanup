@@ -4,14 +4,10 @@
 )
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
 if (-not $isAdmin) {
-    Write-Host "Ошибка: для запуска нужны права Администратора!" -ForegroundColor Red
-    Write-Host "Попробуйте запустить PowerShell от имени Администратора и повторите." -ForegroundColor Yellow
-    
-    $choice = Read-Host "Перезапустить скрипт от имени Администратора? (Y/N)"
-    if ($choice -eq 'Y' -or $choice -eq 'y') {
-        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SkipApps `"$($SkipApps -join ',')`" -SkipFolders `"$($SkipFolders -join ',')`"" -Verb RunAs
-    }
+    Write-Host "Для запуска нужны права Администратора!" -ForegroundColor Red
+    Write-Host "Пожалуйста, закройте это окно и запустите утилиту от имени Администратора." -ForegroundColor Yellow
     exit 1
 }
 
@@ -52,7 +48,7 @@ $programs = @(
         Process = @("Battle.net");
         Path = Join-Path $env:appdata 'Battle.net\Battle.net.config';
         FileType = "json"; 
-        KeysToRemove = @("GaClientId", "AutoLogin", "SavedAccountNames");
+        KeysToRemove = @("AutoLogin", "SavedAccountNames");
     },
     @{
         Name = "VK Play";
@@ -206,12 +202,17 @@ function Stop-Processes {
             
             if ($runningProcesses.ContainsKey($processName)) {
                 foreach ($proc in $runningProcesses[$processName]) {
-                    try {                        
-                        $proc | Stop-Process -Force -ErrorAction Stop
+                    try {
+                        if ($proc.MainWindowHandle) {
+                            $proc.CloseMainWindow() | Out-Null
+                            Start-Sleep -Milliseconds 500
+                        }
+                        if (!$proc.HasExited) {
+                            $proc | Stop-Process -Force -ErrorAction Stop
+                        }
                         Write-Log -level "DEBUG" "Успешно завершён процесс $($proc.Name), PID:($($proc.Id))"
                         $processStopped = $true
-                    }
-                    catch {
+                    } catch {
                         Write-Log -level "ERROR" "Ошибка при завершении $($proc.Name) ($($proc.Id)): $_"
                     }
                 }
@@ -238,13 +239,14 @@ function Remove-CredentialsFromConfig {
         switch ($FileType.ToLower()) {
             'json' {
                 $content = Get-Content $FilePath -Raw | ConvertFrom-Json
+
                 foreach ($key in $KeysToRemove) {
                     if ($content.Client.PSObject.Properties.Name -contains $key) {
                         $content.Client.PSObject.Properties.Remove($key)
                     }
                 }
                 Write-Log -level "DEBUG" -message "Файл конфигурации изменен: `"$FilePath`""
-                $content | ConvertTo-Json | Set-Content -Path $FilePath -Encoding UTF8
+                $content | ConvertTo-Json -Depth 10 | Out-File $FilePath -Encoding UTF8
             }
             'ini' {
                 $lines = Get-Content $FilePath
@@ -335,14 +337,15 @@ Write-Log -level "DEBUG" -message "Скрипт завершил работу"
 
 try {
     Add-Type -AssemblyName System.Windows.Forms
-    $notify = New-Object System.Windows.Forms.NotifyIcon
-    $notify.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Get-Process -Id $PID).Path)
-    $notify.BalloonTipTitle = $Title
-    $notify.BalloonTipText = "Очистка завершена!"
-    $notify.Visible = $true
-    $notify.ShowBalloonTip(3000)
+    $global:balmsg = New-Object System.Windows.Forms.NotifyIcon
+    $path = (Get-Process -id $pid).Path
+    $balmsg.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path)
+    $balmsg.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::Info
+    $balmsg.BalloonTipText = "Очистка завершена!"
+    $balmsg.BalloonTipTitle = "Cleanup Utility"
+    $balmsg.Visible = $true
+    $balmsg.ShowBalloonTip(3000)
     Start-Sleep -Seconds 3
-    $notify.Dispose()
 } catch {
     Write-Log -level "ERROR" -message "Не удалось показать уведомление: $_"
 }

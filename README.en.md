@@ -113,3 +113,26 @@ You can also add `updater.exe` to the task scheduler to check for updates automa
 ```
 schtasks /CREATE /TN "Cleanup Utility Update Checker" /TR "C:\Path\To\update.exe" /SC WEEKLY /D MON /ST 09:00 /RU "SYSTEM" /RL HIGHEST /F
 ```
+
+## Add-on
+
+Cleanup deletes the Google Chrome user directory, which also stores installed extensions. To avoid having to manually install the extensions you need, there is a `.reg` file in the utility folder, after running which the extensions specified in this file will be installed automatically.
+
+```
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Software\Policies\Google\Chrome\ExtensionInstallForcelist]
+"1"="mokknliiomknodkdmpcellamkopbdmao;https://clients2.google.com/service/update2/crx"
+"2"="Extension_ID;https://clients2.google.com/service/update2/crx"
+"3"="Extension_ID;https://clients2.google.com/service/update2/crx"
+```
+
+The extension ID can be found on its page in the Chrome extension store in the browser address bar.
+
+>Example with Repeek:
+
+https://chromewebstore.google.com/detail/repeek-formerly-faceit-en/<ins>***mokknliiomknodkdmpcellamkopbdmao***</ins>?hl=ru&utm_source=ext_sidebar
+
+The highlighted string is the extension ID.
+
+Add the necessary extensions to the file, save and run. In the dialog box, click "Yes". It's done =)
