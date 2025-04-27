@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="360" height="240" src="./assets/card.jpg">
+![Card](./assets/card.jpg)
 
 # Cleanup Utility
 
@@ -109,7 +109,7 @@ C:\Path\To\Cleanup.exe -SkipApps "Steam", "Chrome" -SkipFolders "Downloads", "Te
 Cleanup can automatically update to the latest version. Run `update.exe` to check for updates and download the new version.
 You can also add `update.exe` to the task scheduler to check for updates automatically.
 
-Example of a weekly update check:
+> Example of a weekly update check:
 ```
 schtasks /CREATE /TN "Cleanup Utility Update Checker" /TR "C:\Path\To\update.exe" /SC WEEKLY /D MON /ST 09:00 /RU "SYSTEM" /RL HIGHEST /F
 ```

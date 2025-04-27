@@ -1,0 +1,44 @@
+Флаги запуска
+
+-SkipApps:
+Steam
+EA
+Battle.net
+VK Play
+Riot Games
+Lesta
+Wargaming
+Ubisoft
+Epic Games
+BSGLauncher
+Arena Breakout
+Rockstar Games
+Roblox
+
+Discord
+Telegram
+TeamSpeak 3
+TeamSpeak 6
+WhatsApp
+
+Chrome
+Firefox
+Opera
+Edge
+Yandex
+
+FACEIT
+MarketApp
+
+-SkipFolders
+Downloads
+Images
+Video
+Music
+Temp
+SystemTemp
+CrashDumps
+Thumbnails
+
+Пример:
+C:\Path\To\Cleanup.exe -SkipApps "Steam", "Chrome", "Telegram" -SkipFolders "Downloads", "Images", "Temp", "SystemTemp"
