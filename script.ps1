@@ -75,7 +75,7 @@ $programs = @(
   @{
     Name    = 'Epic Games'
     Process = @('EpicGamesLauncher', 'EpicWebHelper')
-    Path    = Join-Path -Path $env:localappdata -ChildPath 'EpicGamesLauncher\Saved\Config\Windows\GameUserSettings.ini'
+    Path    = Join-Path -Path $env:localappdata -ChildPath 'EpicGamesLauncher\Saved\Config\WindowsEditor\GameUserSettings.ini'
   }, 
   @{
     Name    = 'BSGLauncher'
