@@ -11,6 +11,7 @@
 ![release-badge](https://img.shields.io/github/v/release/cor3jz/PS-Cleanup?color=green&display_name=release)
 ![static-badge](https://img.shields.io/badge/PowerShell-blue)
 
+[![PSScriptAnalyzer](https://github.com/cor3jz/PS-Cleanup/actions/workflows/powershell.yml/badge.svg)](https://github.com/cor3jz/PS-Cleanup/actions/workflows/powershell.yml)
 
 [![ru](https://img.shields.io/badge/lang-ru-blue)](./README.md)
 [![en](https://img.shields.io/badge/lang-en-red)](./README.en.md)
