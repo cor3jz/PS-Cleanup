@@ -19,6 +19,10 @@
 
 </div>
 
+> [!IMPORTANT]
+> End of Support!
+
+
 > [!NOTE]  
 > This utility is provided for informational purposes only! The developer is not responsible for files deleted from your computers and incorrect operation of programs with which this script works! All the best :heart:
 

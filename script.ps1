@@ -34,6 +34,11 @@ $programs = @(
     Path    = Join-Path -Path (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Valve\Steam').InstallPath -ChildPath 'config\loginusers.vdf'
   }, 
   @{
+    Name    = 'SteamBrowser'
+    Process = @('steamwebhelper')
+    Path    = Join-Path -Path $env:localappdata -ChildPath 'Steam\htmlcache\Default'
+  },
+  @{
     Name    = 'EA'
     Process = @('EADesktop', 'EABackgroundService')
     Path    = Join-Path -Path $env:localappdata -ChildPath 'Electronic Arts\EA Desktop'
